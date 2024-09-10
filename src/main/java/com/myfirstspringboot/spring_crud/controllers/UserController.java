@@ -8,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/users")
@@ -34,28 +33,28 @@ public class UserController {
 
     @GetMapping("/{id}")
     public ResponseEntity<UserDTO> getUserById(@PathVariable long id) {
-        try {
-            UserDTO user = userService.getUserById(id);
-            return new ResponseEntity<>(user, HttpStatus.OK);
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        UserDTO user = userService.getUserById(id);
+
+        if (user == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+        return new ResponseEntity<>(user, HttpStatus.OK);
     }
+
     @PutMapping("/{id}")
     public ResponseEntity<User> updateUser(@PathVariable long id, @RequestBody User userDetails) {
-        try {
-            User updatedUser = userService.updateUser(id, userDetails);
-            return new ResponseEntity<>(updatedUser, HttpStatus.OK);
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        User updatedUser = userService.updateUser(id, userDetails);
+        if (updatedUser == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+        return new ResponseEntity<>(updatedUser, HttpStatus.OK);
     }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable long id) {
-        try {
-            userService.deleteUser(id);
+        if (userService.deleteUser(id)) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } catch (NoSuchElementException e) {
+        } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }

@@ -31,18 +31,20 @@ public class UserService {
     }
 
     public UserDTO getUserById(long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
-        return convertToDTO(user);
+        User user = userRepository.findById(id).orElse(null);
+        return user != null ? convertToDTO(user) : null;
     }
 
+
     public User updateUser(long id, User userDetails) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
+        User user = userRepository.findById(id).orElse(null);
+
+        if (user == null) {
+            return null;
+        }
 
         user.setName(userDetails.getName());
         user.setEmail(userDetails.getEmail());
-        // Only update password if it's provided in userDetails
         if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
             user.setPassword(userDetails.getPassword());
         }
@@ -50,11 +52,15 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public void deleteUser(long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
-        userRepository.delete(user);
+    public boolean deleteUser(long id) {
+        try {
+            userRepository.deleteById(id);
+            return true;
+        } catch (EntityNotFoundException e) {
+            return false;
+        }
     }
+
 
     private UserDTO convertToDTO(User user) {
         return new UserDTO(user.getId(), user.getName(), user.getEmail());
