@@ -3,6 +3,7 @@ package com.myfirstspringboot.spring_crud.service;
 import com.myfirstspringboot.spring_crud.dto.UserDTO;
 import com.myfirstspringboot.spring_crud.model.User;
 import com.myfirstspringboot.spring_crud.repository.UserRepository;
+import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,16 @@ public class UserService {
 
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
+    }
+    @PostConstruct
+    public void init() {
+        // Sample data
+        User user1 = new User(0, "John Doe", "john.doe@example.com", "password123");
+        User user2 = new User(0, "Jane Smith", "jane.smith@example.com", "password456");
+
+        // Save sample users to the database
+        userRepository.save(user1);
+        userRepository.save(user2);
     }
 
     public List<UserDTO> getAllUsers() {
