@@ -1,13 +1,15 @@
 package com.myfirstspringboot.spring_crud.service;
 
 import com.myfirstspringboot.spring_crud.dto.UserDTO;
+import com.myfirstspringboot.spring_crud.model.Post;
 import com.myfirstspringboot.spring_crud.model.User;
+import com.myfirstspringboot.spring_crud.repository.PostRepository;
 import com.myfirstspringboot.spring_crud.repository.UserRepository;
 import jakarta.annotation.PostConstruct;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -17,20 +19,9 @@ public class UserService {
 
     private final UserRepository userRepository;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, PostRepository postRepository) {
         this.userRepository = userRepository;
     }
-    @PostConstruct
-    public void init() {
-        // Sample data
-        User user1 = new User(0, "John Doe", "john.doe@example.com", "password123");
-        User user2 = new User(0, "Jane Smith", "jane.smith@example.com", "password456");
-
-        // Save sample users to the database
-        userRepository.save(user1);
-        userRepository.save(user2);
-    }
-
     public List<UserDTO> getAllUsers() {
         return userRepository.findAll().stream()
                 .map(this::convertToDTO)
@@ -64,16 +55,19 @@ public class UserService {
     }
 
     public boolean deleteUser(long id) {
-        try {
-            userRepository.deleteById(id);
-            return true;
-        } catch (EntityNotFoundException e) {
+        if (!userRepository.existsById(id)) {
             return false;
         }
+        userRepository.deleteById(id);
+        return true;
     }
-
 
     private UserDTO convertToDTO(User user) {
         return new UserDTO(user.getId(), user.getName(), user.getEmail());
     }
+    public List<UserDTO> searchUsers(String keyword) {
+        List<User> users = userRepository.searchUsers(keyword);
+        return users.stream().map(this::convertToDTO).collect(Collectors.toList());
+    }
+
 }
