@@ -1,12 +1,19 @@
-# Use node to build the app
-FROM node:18 AS build
-WORKDIR /app
-COPY . .
-RUN npm install && npm run build
+# Build stage
+FROM node:18-alpine as build
 
-# Use nginx to serve the frontend
-FROM nginx:alpine
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+# Production stage
+FROM nginx:stable-alpine
+
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Expose port
 EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
