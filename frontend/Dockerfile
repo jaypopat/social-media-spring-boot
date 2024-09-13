@@ -1,19 +1,15 @@
-# Build stage
-FROM node:18-alpine as build
+FROM oven/bun:1 AS base
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY bun.lockb package.json ./
+
+RUN bun install --frozen-lockfile
 
 COPY . .
-RUN npm run build
 
-# Production stage
-FROM nginx:stable-alpine
+RUN bun run build
 
-COPY --from=build /app/dist /usr/share/nginx/html
+EXPOSE 5173
 
-EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["bun", "run", "dev"]
