@@ -1,8 +1,10 @@
 package com.myfirstspringboot.spring_crud.service;
 
+import com.myfirstspringboot.spring_crud.dto.LikeContent;
 import com.myfirstspringboot.spring_crud.dto.LikeDTO;
 import com.myfirstspringboot.spring_crud.dto.PostDTO;
 import com.myfirstspringboot.spring_crud.dto.UserDTO;
+import com.myfirstspringboot.spring_crud.exception.NotFoundException;
 import com.myfirstspringboot.spring_crud.model.Like;
 import com.myfirstspringboot.spring_crud.model.Post;
 import com.myfirstspringboot.spring_crud.model.User;
@@ -18,9 +20,14 @@ import java.util.stream.Collectors;
 public class LikeService {
 
     private final LikeRepository likeRepository;
+    private final UserRepository userRepository;
+    private final PostRepository postRepository;
+
 
     public LikeService(LikeRepository likeRepository, UserRepository userRepository, PostRepository postRepository) {
         this.likeRepository = likeRepository;
+        this.userRepository = userRepository;
+        this.postRepository = postRepository;
     }
 
     public List<LikeDTO> getAllLikes() {
@@ -32,11 +39,17 @@ public class LikeService {
     public LikeDTO getLikeById(Long id) {
         return likeRepository.findById(id)
                 .map(this::mapToDTO)
-                .orElse(null);
+                .orElseThrow(() -> new NotFoundException("Like not found with id: " + id));
+    }
+    public boolean hasUserLikedPost(Long userId, Long postId) {
+        // Check if the like already exists
+        return likeRepository.existsByUserIdAndPostId(userId, postId);
     }
 
-    public LikeDTO createLike(Like like) {
-        Like savedLike = likeRepository.save(like);
+    public LikeDTO createLike(LikeContent likeContent) {
+        Like savedLike = new Like();
+        savedLike.setUser(userRepository.getReferenceById(likeContent.getUserId()));
+        savedLike.setPost(postRepository.getReferenceById(likeContent.getPostId()));
         return mapToDTO(savedLike);
     }
 
@@ -54,53 +67,47 @@ public class LikeService {
             Like updatedLike = likeRepository.save(like);
             return mapToDTO(updatedLike);
         }
-        return null;
+        throw new NotFoundException("Like not found with id: " + id);
     }
+
     public List<LikeDTO> getLikesByPostId(Long postId) {
         return likeRepository.findByPostId(postId).stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
 
-    private LikeDTO mapToDTO(Like like) {
-        LikeDTO dto = new LikeDTO();
-        dto.setId(like.getId());
-
-        if (like.getUser() != null) {
-            User user = like.getUser();
-            UserDTO userDTO = new UserDTO();
-            userDTO.setId(user.getId());
-            userDTO.setName(user.getName());
-            userDTO.setEmail(user.getEmail());
-            dto.setUser(userDTO);
-        }
-
-        if (like.getPost() != null) {
-            Post post = like.getPost();
-            PostDTO postDTO = new PostDTO();
-            postDTO.setId(post.getId());
-            postDTO.setContent(post.getContent());
-            postDTO.setCreatedAt(post.getCreatedAt());
-            dto.setPost(postDTO);
-        }
-
-        return dto;
-    }
-
-    private UserDTO mapToUserDTO(User user) {
-        if (user == null) return null;
-        UserDTO userDTO = new UserDTO();
-        userDTO.setId(user.getId());
-        userDTO.setName(user.getName());
-        userDTO.setEmail(user.getEmail());
-        return userDTO;
-
-
-    }
-
     public List<LikeDTO> getLikesByUserId(long userId) {
         return likeRepository.findByUserId(userId).stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
+    }
+
+    private LikeDTO mapToDTO(Like like) {
+
+        return LikeDTO.builder()
+                .id(like.getId())
+                .user(mapToUserDTO(like.getUser()))
+                .post(mapToPostDTO(like.getPost()))
+                .build();
+    }
+
+    private UserDTO mapToUserDTO(User user) {
+        if (user == null) return null;
+
+        return UserDTO.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .build();
+    }
+
+    private PostDTO mapToPostDTO(Post post) {
+        if (post == null) return null;
+
+        return PostDTO.builder()
+                .id(post.getId())
+                .content(post.getContent())
+                .createdAt(post.getCreatedAt())
+                .build();
     }
 }

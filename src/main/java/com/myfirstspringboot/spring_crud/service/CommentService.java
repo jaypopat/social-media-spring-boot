@@ -1,11 +1,11 @@
 package com.myfirstspringboot.spring_crud.service;
 
+import com.myfirstspringboot.spring_crud.dto.CommentContent;
 import com.myfirstspringboot.spring_crud.dto.CommentDTO;
-import com.myfirstspringboot.spring_crud.dto.LikeDTO;
 import com.myfirstspringboot.spring_crud.dto.PostDTO;
 import com.myfirstspringboot.spring_crud.dto.UserDTO;
+import com.myfirstspringboot.spring_crud.exception.NotFoundException;
 import com.myfirstspringboot.spring_crud.model.Comment;
-import com.myfirstspringboot.spring_crud.model.Like;
 import com.myfirstspringboot.spring_crud.model.Post;
 import com.myfirstspringboot.spring_crud.model.User;
 import com.myfirstspringboot.spring_crud.repository.CommentRepository;
@@ -13,18 +13,17 @@ import com.myfirstspringboot.spring_crud.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class CommentService {
 
     private final CommentRepository commentRepository;
-    private final LikeService likeService;
+    private final UserRepository userRepository;
 
-    public CommentService(CommentRepository commentRepository, UserRepository userRepository, LikeService likeService) {
+    public CommentService(CommentRepository commentRepository, UserRepository userRepository) {
         this.commentRepository = commentRepository;
-        this.likeService = likeService;
+        this.userRepository = userRepository;
     }
 
     public List<CommentDTO> getAllComments() {
@@ -32,15 +31,17 @@ public class CommentService {
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
-
     public CommentDTO getCommentsByCommentId(Long id) {
         return commentRepository.findById(id)
                 .map(this::mapToDTO)
-                .orElse(null);
+                .orElseThrow(() -> new NotFoundException("Comment not found with id: " + id));
     }
 
-    public CommentDTO createComment(Comment comment) {
-        Comment savedComment = commentRepository.save(comment);
+
+    public CommentDTO createComment(CommentContent commentContent) {
+        Comment savedComment = new Comment();
+        savedComment.setText(commentContent.getText());
+        savedComment.setUser(userRepository.getReferenceById(commentContent.getUserId()));
         return mapToDTO(savedComment);
     }
 
@@ -58,36 +59,11 @@ public class CommentService {
             Comment updatedComment = commentRepository.save(comment);
             return mapToDTO(updatedComment);
         }
-        return null;
+        throw new NotFoundException("Comment not found with id: " + id);
     }
 
-    private CommentDTO mapToDTO(Comment comment) {
-        CommentDTO dto = new CommentDTO();
-        dto.setId(comment.getId());
-        dto.setText(comment.getText());
-
-        if (comment.getUser() != null) {
-            User user = comment.getUser();
-            UserDTO userDTO = new UserDTO();
-            userDTO.setId(user.getId());
-            userDTO.setName(user.getName());
-            userDTO.setEmail(user.getEmail());
-            dto.setUser(userDTO);
-        }
-        if (comment.getPost() != null) {
-            Post post = comment.getPost();
-            PostDTO postDTO = new PostDTO();
-            postDTO.setId(post.getId());
-            postDTO.setContent(post.getContent());
-            postDTO.setCreatedAt(post.getCreatedAt());
-            dto.setPost(postDTO);
-        }
-
-        return dto;
-    }
-
-    public List<CommentDTO> getCommentsByPostId(Long id) {
-        return commentRepository.findByPostId(id).stream()
+    public List<CommentDTO> getCommentsByPostId(Long postId) {
+        return commentRepository.findByPostId(postId).stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
@@ -96,6 +72,34 @@ public class CommentService {
         return commentRepository.findByUserId(userId).stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
+    }
 
+    private CommentDTO mapToDTO(Comment comment) {
+        return CommentDTO.builder()
+                .id(comment.getId())
+                .text(comment.getText())
+                .user(mapToUserDTO(comment.getUser()))
+                .post(mapToPostDTO(comment.getPost()))
+                .build();
+    }
+
+    private UserDTO mapToUserDTO(User user) {
+        if (user == null) return null;
+
+        return UserDTO.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .build();
+    }
+
+    private PostDTO mapToPostDTO(Post post) {
+        if (post == null) return null;
+
+        return PostDTO.builder()
+                .id(post.getId())
+                .content(post.getContent())
+                .createdAt(post.getCreatedAt())
+                .build();
     }
 }

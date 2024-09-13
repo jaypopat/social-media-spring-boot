@@ -1,7 +1,10 @@
 package com.myfirstspringboot.spring_crud.model;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
+@Table(name = "user_table")
 public class User {
 
     @Id
@@ -18,6 +22,7 @@ public class User {
     private long id;
     private String name;
     private String email;
+
     private String password;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
@@ -28,5 +33,22 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Like> likes = new ArrayList<>();
+
+    @ManyToMany
+    @JoinTable(
+            name = "user_following",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "following_id")
+    )
+    private List<User> following = new ArrayList<>();
+
+    public void follow(User user) {
+        if (!this.following.contains(user)) {
+            this.following.add(user);
+        }
+    }
+    public void unfollow(User user) {
+        this.following.remove(user);
+    }
 
 }

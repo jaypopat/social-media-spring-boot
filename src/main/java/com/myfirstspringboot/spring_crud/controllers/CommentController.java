@@ -1,5 +1,6 @@
 package com.myfirstspringboot.spring_crud.controllers;
 
+import com.myfirstspringboot.spring_crud.dto.CommentContent;
 import com.myfirstspringboot.spring_crud.dto.CommentDTO;
 import com.myfirstspringboot.spring_crud.model.Comment;
 import com.myfirstspringboot.spring_crud.service.CommentService;
@@ -27,9 +28,9 @@ public class CommentController {
     }
 
     @PostMapping
-    public ResponseEntity<CommentDTO> createComment(@RequestBody Comment comment) {
+    public ResponseEntity<CommentDTO> createComment(@RequestBody CommentContent comment) {
         CommentDTO createdComment = commentService.createComment(comment);
-        return new ResponseEntity<>(createdComment, HttpStatus.CREATED);
+        return new ResponseEntity<>(createdComment, HttpStatus.CREATED);    
     }
 
     @DeleteMapping("/{id}")
@@ -43,16 +44,12 @@ public class CommentController {
     @PutMapping("/{id}")
     public ResponseEntity<CommentDTO> updateComment(@PathVariable Long id, @RequestBody Comment comment) {
         CommentDTO updatedComment = commentService.updateComment(id, comment);
-        return updatedComment != null ?
-                new ResponseEntity<>(updatedComment, HttpStatus.OK) :
-                new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(updatedComment, HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<CommentDTO> getCommentById(@PathVariable Long id) {
         CommentDTO comment = commentService.getCommentsByCommentId(id);
-        return comment != null ?
-                new ResponseEntity<>(comment, HttpStatus.OK) :
-                new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(comment, HttpStatus.OK);
     }
 }

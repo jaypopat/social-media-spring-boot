@@ -1,9 +1,6 @@
 package com.myfirstspringboot.spring_crud.controllers;
 
-import com.myfirstspringboot.spring_crud.dto.CommentDTO;
-import com.myfirstspringboot.spring_crud.dto.LikeDTO;
-import com.myfirstspringboot.spring_crud.dto.PostDTO;
-import com.myfirstspringboot.spring_crud.dto.UserDTO;
+import com.myfirstspringboot.spring_crud.dto.*;
 import com.myfirstspringboot.spring_crud.model.User;
 import com.myfirstspringboot.spring_crud.service.CommentService;
 import com.myfirstspringboot.spring_crud.service.LikeService;
@@ -38,7 +35,7 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<User> createUser(@RequestBody User user) {
+    public ResponseEntity<User> createUser(@RequestBody UserContent user) {
         User createdUser = userService.createUser(user);
         return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
     }
@@ -70,11 +67,6 @@ public class UserController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
-    @PostMapping("/search")
-    public ResponseEntity<List<UserDTO>> searchUsers(@RequestParam String keyword) {
-        List<UserDTO> users = userService.searchUsers(keyword);
-        return new ResponseEntity<>(users, HttpStatus.OK);
-    }
     @GetMapping("/{userId}/posts")
     public ResponseEntity<List<PostDTO>> getPosts(@PathVariable long userId) {
         var posts = postService.getPostsByUserId(userId);
@@ -85,10 +77,31 @@ public class UserController {
         var comments = commentService.getCommentsByUserId(userId);
         return new ResponseEntity<>(comments, HttpStatus.OK);
     }
-    // get all user likes
     @GetMapping("/{userId}/likes")
     public ResponseEntity<List<LikeDTO>> getLikes(@PathVariable long userId) {
         var likes = likeService.getLikesByUserId(userId);
         return new ResponseEntity<>(likes, HttpStatus.OK);
+    }
+    @GetMapping("/search")
+    public ResponseEntity<List<UserDTO>> searchUsers(@RequestParam String keyword) {
+        List<UserDTO> users = userService.searchUsers(keyword);
+        return new ResponseEntity<>(users, HttpStatus.OK);
+    }
+    @GetMapping("/{userId}/feed")
+    public List<PostDTO> getUserFeed(@PathVariable long userId) {
+        return userService.getUserFeed(userId);
+    }
+    @PostMapping("/{userId}/follow/{followedId}")
+    public void followUser(@PathVariable long userId, @PathVariable long followedId) {
+        userService.followUser(userId, followedId);
+    }
+    @GetMapping("/{userId}/following")
+    public List<UserDTO> getFollowing(@PathVariable long userId) {
+        return userService.getFollowing(userId);
+    }
+
+    @PostMapping("/{userId}/unfollow/{followedId}")
+    public void unfollowUser(@PathVariable long userId, @PathVariable long followedId) {
+        userService.unfollowUser(userId, followedId);
     }
 }

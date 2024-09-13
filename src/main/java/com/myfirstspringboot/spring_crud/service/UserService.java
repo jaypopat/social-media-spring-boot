@@ -1,15 +1,14 @@
 package com.myfirstspringboot.spring_crud.service;
 
+import com.myfirstspringboot.spring_crud.dto.PostDTO;
+import com.myfirstspringboot.spring_crud.dto.UserContent;
 import com.myfirstspringboot.spring_crud.dto.UserDTO;
-import com.myfirstspringboot.spring_crud.model.Post;
+import com.myfirstspringboot.spring_crud.exception.NotFoundException;
 import com.myfirstspringboot.spring_crud.model.User;
-import com.myfirstspringboot.spring_crud.repository.PostRepository;
 import com.myfirstspringboot.spring_crud.repository.UserRepository;
-import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,9 +17,11 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PostService postService;
 
-    public UserService(UserRepository userRepository, PostRepository postRepository) {
+    public UserService(UserRepository userRepository, PostService postService) {
         this.userRepository = userRepository;
+        this.postService = postService;
     }
     public List<UserDTO> getAllUsers() {
         return userRepository.findAll().stream()
@@ -28,7 +29,11 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    public User createUser(User user) {
+    public User createUser(UserContent userContent) {
+        User user = new User();
+        user.setName(userContent.getName());
+        user.setPassword(userContent.getPassword());
+        user.setEmail(userContent.getEmail());
         return userRepository.save(user);
     }
 
@@ -61,13 +66,50 @@ public class UserService {
         userRepository.deleteById(id);
         return true;
     }
+    public List<PostDTO> getUserFeed(long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
+        List<User> following = user.getFollowing();
+
+        return postService.feedForUsers(following);
+    }
+    public void followUser(long followerId, long followedId) {
+        User follower = userRepository.findById(followerId)
+                .orElseThrow(() -> new NotFoundException("Follower user not found"));
+        User followed = userRepository.findById(followedId)
+                .orElseThrow(() -> new NotFoundException("Followed user not found"));
+
+        follower.getFollowing().add(followed);
+
+        userRepository.save(follower);
+    }
+
+    public void unfollowUser(long followerId, long followedId) {
+        User follower = userRepository.findById(followerId)
+                .orElseThrow(() -> new NotFoundException("Follower user not found"));
+        User followed = userRepository.findById(followedId)
+                .orElseThrow(() -> new NotFoundException("Followed user not found"));
+
+        follower.getFollowing().remove(followed);
+
+        userRepository.save(follower);
+    }
 
     private UserDTO convertToDTO(User user) {
-        return new UserDTO(user.getId(), user.getName(), user.getEmail());
+        return UserDTO.builder().email(user.getEmail()).id(user.getId()).name(user.getName()).build();
     }
     public List<UserDTO> searchUsers(String keyword) {
         List<User> users = userRepository.searchUsers(keyword);
         return users.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
+    public List<UserDTO> getFollowing(long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
+        return user.getFollowing().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
 }

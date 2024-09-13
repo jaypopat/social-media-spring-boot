@@ -1,5 +1,6 @@
 package com.myfirstspringboot.spring_crud.controllers;
 
+import com.myfirstspringboot.spring_crud.dto.LikeContent;
 import com.myfirstspringboot.spring_crud.dto.LikeDTO;
 import com.myfirstspringboot.spring_crud.model.Like;
 import com.myfirstspringboot.spring_crud.service.LikeService;
@@ -26,8 +27,13 @@ public class LikeController {
     }
 
     @PostMapping
-    public ResponseEntity<LikeDTO> createLike(@RequestBody Like like) {
+    public ResponseEntity<LikeDTO> createLike(@RequestBody LikeContent like) {
         LikeDTO createdLike = likeService.createLike(like);
+
+        if (likeService.hasUserLikedPost(like.getUserId(), like.getPostId())) {
+            return new ResponseEntity<>(HttpStatus.CONFLICT);
+        }
+
         return new ResponseEntity<>(createdLike, HttpStatus.CREATED);
     }
 
@@ -42,16 +48,12 @@ public class LikeController {
     @PutMapping("/{id}")
     public ResponseEntity<LikeDTO> updateLike(@PathVariable Long id, @RequestBody Like like) {
         LikeDTO updatedLike = likeService.updateLike(id, like);
-        return updatedLike != null ?
-                new ResponseEntity<>(updatedLike, HttpStatus.OK) :
-                new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(updatedLike, HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<LikeDTO> getLikeById(@PathVariable Long id) {
         LikeDTO like = likeService.getLikeById(id);
-        return like != null ?
-                new ResponseEntity<>(like, HttpStatus.OK) :
-                new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(like, HttpStatus.OK) ;
     }
 }

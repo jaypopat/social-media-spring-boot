@@ -2,11 +2,13 @@ package com.myfirstspringboot.spring_crud.controllers;
 
 import com.myfirstspringboot.spring_crud.dto.CommentDTO;
 import com.myfirstspringboot.spring_crud.dto.LikeDTO;
+import com.myfirstspringboot.spring_crud.dto.PostContent;
 import com.myfirstspringboot.spring_crud.dto.PostDTO;
 import com.myfirstspringboot.spring_crud.model.Post;
 import com.myfirstspringboot.spring_crud.service.CommentService;
 import com.myfirstspringboot.spring_crud.service.LikeService;
 import com.myfirstspringboot.spring_crud.service.PostService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -34,8 +36,8 @@ public class PostController {
     }
 
     @PostMapping
-    public ResponseEntity<PostDTO> createPost(@RequestBody Post post) {
-        PostDTO createdPost = postService.createPost(post);
+    public ResponseEntity<PostDTO> createPost(@RequestBody @Valid PostContent postContent) {
+        PostDTO createdPost = postService.createPost(postContent);
         return new ResponseEntity<>(createdPost, HttpStatus.CREATED);
     }
 
@@ -48,8 +50,8 @@ public class PostController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<PostDTO> updatePost(@PathVariable Long id, @RequestBody Post post) {
-        PostDTO updatedPost = postService.updatePost(id, post);
+    public ResponseEntity<PostDTO> updatePost(@PathVariable Long id, @RequestBody PostContent postContent) {
+        PostDTO updatedPost = postService.updatePost(id, postContent);
         return updatedPost != null ?
                 new ResponseEntity<>(updatedPost, HttpStatus.OK) :
                 new ResponseEntity<>(HttpStatus.NOT_FOUND);
